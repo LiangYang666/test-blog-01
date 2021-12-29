@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liang.modules.sys.dao.UserLoginDao">
+    <resultMap id="userMap" type="com.liang.modules.sys.entity.VO.UserVOEntity">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="phone" column="phone"/>
+        <result property="lastTime" column="last_time"/>
+        <collection property="roles" ofType="com.liang.modules.sys.entity.VO.RoleVOEntity">
+            <id property="id" column="role_id"/>
+            <result property="roleName" column="role_name"/>
+            <collection property="permissionSet" ofType="com.liang.modules.sys.entity.PermissionEntity">
+                <id property="id" column="permission_id"/>
+                <result property="permissionName" column="permission_name"/>
+            </collection>
+        </collection>
+    </resultMap>
+    <select id="findByPhone" parameterType="String" resultMap="userMap">
+        select u.*, r.role_name, p.id as permission_id, p.permission_name
+        from users u
+                 join roles r on u.role_id=r.id
+                 join role_permission rp on r.id = rp.role_id
+                 join permission p on p.id = rp.permission_id
+        where phone=#{phone};
+    </select>
+</mapper>
