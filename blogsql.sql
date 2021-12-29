@@ -35,6 +35,20 @@ create table role_permission (
     key `permission_id` (`permission_id`)
 )engine=InnoDB DEFAULT CHARSET=utf8mb4;
 
+# 插入角色表信息
+insert into roles values (1, 'admin');
+insert into roles values (2, 'user');
+insert into roles values (3, 'partner');
+# 插入权限表信息
+insert into permission values (1, 'editor');
+insert into permission values (2, 'manage');
+insert into permission values (3, 'comment');
+#插入角色和对应的权限对应关系
+insert into role_permission values (1, 2);
+insert into role_permission values (2, 3);
+insert into role_permission values (3, 1);
+# 插入用户信息
+insert into users values(1, '洪城布衣','123456', '12345678910', '2021-12-22', 1);
 
 
 
