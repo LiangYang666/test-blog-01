@@ -51,6 +51,13 @@ insert into role_permission values (3, 1);
 insert into users values(1, '洪城布衣','123456', '12345678910', '2021-12-22', 1);
 
 
+# 联表查看信息
+select u.*, r.role_name, rpn.permission_id, p.permission_name
+from users u
+join roles r on u.role_id = r.id
+join role_permission rpn on r.id = rpn.role_id
+join permission p on rpn.permission_id = p.id;
+
 
 
 
