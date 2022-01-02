@@ -58,7 +58,9 @@ join roles r on u.role_id = r.id
 join role_permission rpn on r.id = rpn.role_id
 join permission p on rpn.permission_id = p.id;
 
-
+update users
+set password='f878b04f4dcf4610626327d0630fc81f'
+where phone='12345678910';
 
 
 
