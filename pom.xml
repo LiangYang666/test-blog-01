@@ -54,6 +54,20 @@
             <version>1.1.14</version>
         </dependency>
 
+        <!--shiro 配置-->
+        <dependency>
+            <groupId>org.apache.shiro</groupId>
+            <artifactId>shiro-spring-boot-web-starter</artifactId>
+            <version>1.7.1</version>
+        </dependency>
+
+        <!--模板引擎thymeleaf使用shiro权限对组件进行显示控制-->
+        <dependency>
+            <groupId>com.github.theborakompanioni</groupId>
+            <artifactId>thymeleaf-extras-shiro</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
