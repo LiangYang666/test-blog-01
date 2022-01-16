@@ -1,6 +1,6 @@
 package com.liang.modules.sys.shiro;
 
-//import at.pollux.thymeleaf.shiro.dialect.ShiroDialect;
+import at.pollux.thymeleaf.shiro.dialect.ShiroDialect;
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
@@ -83,10 +83,9 @@ public class ShiroConfig {
         userRealm.setCredentialsMatcher(hashedCredentialsMatcher());
         return userRealm;
     }
-
-//    // Shiro控制ThymeLeaf界面按钮级权限控制
-//    @Bean
-//    public ShiroDialect getShiroDialect(){
-//        return new ShiroDialect();
-//    }
+    // Shiro控制ThymeLeaf界面按钮根据授权信息是否显示
+    @Bean
+    public ShiroDialect getShiroDialect(){
+        return new ShiroDialect();
+    }
 }
