@@ -574,12 +574,148 @@ where phone='12345678910';
 运行主启动类，即`com.liang.TestBlog01Application`
 输入网址`http://localhost:8080/`
 
-输入手机12345678910
-输入密码，先随机输入一个错误的密码，例如123123，登录
-提示密码错误
+输入手机12345678910  
+输入密码，先随机输入一个错误的密码，例如123123，登录  
+提示密码错误  
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/ddc60ed373a14f4baa946c7d81c52a26.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rSq5Z-O5biD6KGj,size_20,color_FFFFFF,t_70,g_se,x_16)
 
 再输入123456，跳转到另外一个界面，并且浏览器地址栏显示为`http://localhost:8080/lasturl`，证明代码到此就完成了登陆的认证操作
 ![在这里插入图片描述](https://img-blog.csdnimg.cn/294fcb3e8b304089b0cb80f82fb4eefa.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rSq5Z-O5biD6KGj,size_20,color_FFFFFF,t_70,g_se,x_16)
 
 ## 2.3.5 分析
+# 三、界面完善
+## 3.1 静态文件
+### 3.1.1 引入index页面
+1. 从项目源码中的index.html导入至`src/main/resources/templates/index.html`
+2. 注释掉以下三个位置的div
+
+```html
+# 注释掉这些
+<div th:replace="lunbo :: lunbo"></div>	
+<div th:replace="left :: left"></div>
+<div th:replace="aside :: aside"></div>
+```
+
+### 3.1.2 引入lasturl.html页面
+从项目源码中的lasturl.html导入至`src/main/resources/templates/lasturl.html`
+### 3.1.3 导入lastUrl.js
+导入`src/main/resources/static/style/js/lastUrl.js`
+
+## 3.2 创建HomeController类
+1. 将之前创建的TestController类删除
+2. 创建com.liang.modules.sys.controller.HomeController
+   内容如下
+   ```java
+     /**
+     * @description 跳转至首页
+     */
+   @Controller
+   public class HomeController {
+       @RequestMapping({"/", "/index"})
+       public String index(){
+           return "index";
+       }
+   }
+   
+    /**
+     * @description 跳转至登陆页面，并保存跳转前的页面位置lastUrl
+     */
+   @GetMapping("login")
+   public String login(HttpServletRequest request){
+       String lastUrl = request.getHeader("Referer");// 获取从哪里点进来的
+       if (StringUtils.isEmpty(lastUrl)){
+           return "login";
+       }
+       if (lastUrl.contains("findPwd") ||
+           lastUrl.contains("register") ||
+           lastUrl.contains("login")){
+           //若为注册、找回密码等界面进的登陆连接则删除lastUrl属性，这样就可以在登陆完成时不会又重新跳转回注册、找回密码等链接
+           request.getSession().removeAttribute("lastUrl");
+       } else {
+           //保存跳转页面之前的url
+           request.getSession().setAttribute("lastUrl", lastUrl);
+       }
+       return "login";
+   }
+
+    /**
+     * @description 跳转到index.html或lasturl.html，保存存储的链接到response头
+     */
+   @GetMapping("lasturl")
+   public String lastUrl(HttpServletRequest request, HttpServletResponse response){
+       System.out.println("进入了lastUrl");
+       String lastUrl = (String) request.getSession().getAttribute("lastUrl");
+       if (StringUtils.isEmpty(lastUrl)){
+           System.out.println("index ==> 1");
+           System.out.println(lastUrl);
+           return "index";
+       } else {
+           response.setHeader("lastUrl", lastUrl);
+           System.out.println("index ==> 2");
+           System.out.println(lastUrl);
+           return "lasturl";
+       }
+   }
+   ```
+## 3.3 测试与分析
+### 3.3.1 测试
+运行未正常的，可查看`target中`是否有新添加的静态文件，如没有可以先将`target`删除重新编译生成  
+输入http://localhost:8080/显示如下，点击登陆，输入手机和密码，登陆成功后将正常返回至首页
+![在这里插入图片描述](https://img-blog.csdnimg.cn/d33e216a7c4c46dd99d653e7266b5c70.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rSq5Z-O5biD6KGj,size_20,color_FFFFFF,t_70,g_se,x_16)
+### 3.3.2 分析
+登录后未显示登录用户名，仍然显示登陆和注册两个按钮，这不是我们所需要的，这是由于我们还没做授权，下一步将做授权
+
+# 四、授权
+## 4.1 授权设置
+### 4.1.1 重写授权方法
+对`com.liang.modules.sys.shiro.UserRealm`类中的`doGetAuthorizationInfo`授权方法重写，之前我们重写的是认证方法
+
+```java
+     /**
+      * @method  授权方法
+      */
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
+        //获取用户(前期认证已经加入进去了)
+        UserVOEntity user = (UserVOEntity) SecurityUtils.getSubject().getPrincipal();
+        Set<RoleVOEntity> roles = user.getRoles();
+        List<String> roleNameList = new ArrayList<>();
+        List<String> permissionList = new ArrayList<>();
+        for (RoleVOEntity role :
+                roles) {
+            roleNameList.add(role.getRoleName());   // 添加角色名称
+            for (PermissionEntity permission:
+                 role.getPermissionSet()) {
+                permissionList.add(permission.getPermissionName()); // 添加权限名称
+            }
+        }
+        SimpleAuthorizationInfo info = new SimpleAuthorizationInfo();     // 授权
+        info.addStringPermissions(permissionList);
+        info.addRoles(roleNameList);
+        return info;
+    }
+```
+### 4.1.2 shiro授权按钮显示配置
+在`com.liang.modules.sys.shiro.ShiroConfig`中添加一个方法
+
+```java
+    // Shiro控制ThymeLeaf界面按钮根据授权信息是否显示
+    @Bean
+    public ShiroDialect getShiroDialect(){
+        return new ShiroDialect();
+    }
+```
+
+## 4.2 测试及分析
+### 4.2.1 测试
+同理，运行，输入网址、登录，登录完成后上方的登录和注册按钮消失并显示为登录用户的名称，如图所示
+![在这里插入图片描述](https://img-blog.csdnimg.cn/af593dd3a3a84880944c8002b6b14755.png?x-oss-process=image/watermark,type_d3F5LXplbmhlaQ,shadow_50,text_Q1NETiBA5rSq5Z-O5biD6KGj,size_20,color_FFFFFF,t_70,g_se,x_16)
+### 4.2.1 分析
+这里能做到根据授权信息决定是否显示登录、注册按钮的原因是huml中shiro web的支持，shiro标签根据当前的授权信息，调整前端页面标签的显示  
+例如可以查看header.html文件中，注册按钮的一段html程序，当未认证的时候即`shiro:notAuthenticated=""`，标签内的将会显示
+```html
+<div class="am-topbar-right" shiro:notAuthenticated="">
+    <a href="/register" class="am-btn am-btn-primary am-topbar-btn am-btn-sm"
+       style="color: white">注册</a>
+</div>
+```
